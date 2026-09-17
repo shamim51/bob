@@ -1,9 +1,9 @@
 package com.chatwoot.api.security;
 
-import com.chatwoot.api.domain.AccountUser;
-import com.chatwoot.api.domain.User;
-import com.chatwoot.api.repo.AccountUserRepository;
-import com.chatwoot.api.repo.UserRepository;
+import com.chatwoot.api.account.model.AccountUser;
+import com.chatwoot.api.account.model.User;
+import com.chatwoot.api.account.repository.AccountUserRepository;
+import com.chatwoot.api.account.repository.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;

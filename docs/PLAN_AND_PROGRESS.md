@@ -98,7 +98,7 @@ Work in **this repo**, not in Chatwoot, unless you are comparing a jbuilder/find
 1. Open `/home/newroz/open-source/chatwoot-spring`.
 2. Read this file, then `README.md`.
 3. Run tests: `./gradlew test`.
-4. Compare JSON to Chatwoot sources of truth (do not “improve” the shape):
+4. Compare JSON to Chatwoot sources of truth (do not “improve” the shape). Map each jbuilder to a DTO in the feature’s `dto` package:
    - `chatwoot/app/views/api/v1/accounts/conversations/index.json.jbuilder`
    - `chatwoot/app/views/api/v1/conversations/partials/_conversation.json.jbuilder`
    - `chatwoot/app/views/api/v1/models/_message.json.jbuilder`
@@ -136,14 +136,19 @@ Do not start C or D until Conversations REST + (ideally) B work against the exis
 
 ### Map of this codebase
 
+Package-by-feature under `com.chatwoot.api`. Each feature owns `controller`, `model`, `repository`, `dto`, `mapper`, and (when Chatwoot has them) `finder` / `builder`.
+
 | Package | Role (Chatwoot analogue) |
 |---|---|
-| `domain` | Models / tables |
-| `finder` | `ConversationFinder`, `MessageFinder` |
-| `builder` | `Messages::MessageBuilder`, display_id sequence |
-| `web.api.v1` | Controllers / routes |
-| `web.dto.ChatwootJson` | Jbuilder JSON |
+| `account` | Account, User, AccountUser, profile, agents |
+| `contact` | Contact, ContactInbox |
+| `inbox` | Inbox, InboxMember |
+| `conversation` | Conversation, ConversationFinder, display_id |
+| `messaging` | Message, MessageFinder, MessageBuilder |
+| `notification` / `label` / `team` / `customattribute` / `customfilter` | stub supporting reads |
+| `shared.dto` | timestamps, `{ payload }` wrapper |
 | `security` | JWT → user by email |
+| `config` | Security, CORS, seed |
 
 ---
 
