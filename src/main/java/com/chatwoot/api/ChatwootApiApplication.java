@@ -1,0 +1,12 @@
+package com.chatwoot.api;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class ChatwootApiApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(ChatwootApiApplication.class, args);
+    }
+}
