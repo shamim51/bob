@@ -13,7 +13,7 @@ This is not a fork of the Rails app. It lives beside Chatwoot and implements the
 - Conversations list/show/meta, messages index/create, last_seen, toggle_status, assignments
 - Supporting reads: profile, account, inboxes, agents, contacts, empty labels/teams/notifications
 
-**Not in this run:** Facebook, Captain, ActionCable, Vue auth adapter.
+**Not in this run:** Facebook, Captain, ActionCable.
 
 ## Run
 
@@ -33,7 +33,13 @@ Seed users (must exist in Keycloak with the same emails):
 
 ## Auth
 
-Spring Boot does not issue tokens. The dashboard must send a Keycloak access token. `GET /api/v1/profile` returns Chatwoot’s user payload wrapped as `{ "payload": { "success": true, "data": { ... } } }`.
+Spring Boot does not issue tokens. The dashboard logs in at Keycloak and sends `Authorization: Bearer`. `GET /api/v1/profile` returns Chatwoot’s user payload wrapped as `{ "payload": { "success": true, "data": { ... } } }`.
+
+Committed default issuer is `http://localhost:8081/realms/chatwoot`. To match silkroad-fe / Bob web locally:
+
+```bash
+export KEYCLOAK_ISSUER_URI=https://dev-kc.getsport360.com/realms/test_realm
+```
 
 ## Chatwoot contracts copied
 
@@ -53,7 +59,7 @@ Channel send (`SendReplyJob`) is skipped; outgoing messages stay `status: sent`.
 - Conversations list/show/meta, messages index/create, last_seen, toggle_status, assignments
 - Supporting reads: profile, account, inboxes, agents, contacts, empty labels/teams/notifications
 
-**Not in this run:** Facebook, Captain, ActionCable, Vue auth adapter.
+**Not in this run:** Facebook, Captain, ActionCable.
 
 ## Run
 
@@ -73,7 +79,13 @@ Seed users (must exist in Keycloak with the same emails):
 
 ## Auth
 
-Spring Boot does not issue tokens. The dashboard must send a Keycloak access token. `GET /api/v1/profile` returns Chatwoot’s user payload wrapped as `{ "payload": { "success": true, "data": { ... } } }`.
+Spring Boot does not issue tokens. The dashboard logs in at Keycloak and sends `Authorization: Bearer`. `GET /api/v1/profile` returns Chatwoot’s user payload wrapped as `{ "payload": { "success": true, "data": { ... } } }`.
+
+Committed default issuer is `http://localhost:8081/realms/chatwoot`. To match silkroad-fe / Bob web locally:
+
+```bash
+export KEYCLOAK_ISSUER_URI=https://dev-kc.getsport360.com/realms/test_realm
+```
 
 ## Chatwoot contracts copied
 

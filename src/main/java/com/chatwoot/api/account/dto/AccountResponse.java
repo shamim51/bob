@@ -29,7 +29,7 @@ public record AccountResponse(
             boolean conversationUnreadCounts
     ) {
         public static AccountFeaturesResponse defaults() {
-            return new AccountFeaturesResponse(true, true, true, true, false, false, false, false);
+            return new AccountFeaturesResponse(true, true, true, true, true, false, false, false);
         }
     }
 

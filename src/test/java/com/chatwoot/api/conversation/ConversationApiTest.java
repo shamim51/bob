@@ -212,7 +212,8 @@ class ConversationApiTest {
                         .with(jwt().jwt(jwt -> jwt.claim("email", "agent@example.com"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.payload.data.email").value("agent@example.com"))
-                .andExpect(jsonPath("$.payload.data.accounts[0].id").value(accountId));
+                .andExpect(jsonPath("$.payload.data.accounts[0].id").value(accountId))
+                .andExpect(jsonPath("$.payload.data.accounts[0].permissions[0]").value("agent"));
         mockMvc.perform(get("/api/v1/accounts/{id}", accountId)
                         .with(jwt().jwt(jwt -> jwt.claim("email", "agent@example.com"))))
                 .andExpect(status().isOk())

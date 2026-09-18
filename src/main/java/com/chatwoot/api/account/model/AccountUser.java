@@ -105,6 +105,10 @@ public class AccountUser {
         return activeAt;
     }
 
+    public void setActiveAt(Instant activeAt) {
+        this.activeAt = activeAt;
+    }
+
     public Integer getAvailability() {
         return availability;
     }

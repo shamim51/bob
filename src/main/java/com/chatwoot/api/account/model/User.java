@@ -111,6 +111,10 @@ public class User {
         return displayName;
     }
 
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
     public String getEmail() {
         return email;
     }
@@ -131,6 +135,10 @@ public class User {
         return uiSettings == null ? Map.of() : uiSettings;
     }
 
+    public void setUiSettings(Map<String, Object> uiSettings) {
+        this.uiSettings = uiSettings == null ? new HashMap<>() : uiSettings;
+    }
+
     public Map<String, Object> getCustomAttributes() {
         return customAttributes;
     }
@@ -141,6 +149,10 @@ public class User {
 
     public String getMessageSignature() {
         return messageSignature;
+    }
+
+    public void setMessageSignature(String messageSignature) {
+        this.messageSignature = messageSignature;
     }
 
     public String availableName() {

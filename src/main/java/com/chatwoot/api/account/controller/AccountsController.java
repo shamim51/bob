@@ -22,7 +22,7 @@ public class AccountsController {
         this.mapper = mapper;
     }
 
-    @GetMapping
+    @GetMapping({"", "/"})
     public AccountResponse show(@PathVariable Integer accountId) {
         Account account = currentUserService.requireMembership(accountId).getAccount();
         return mapper.account(account);

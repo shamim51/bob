@@ -4,6 +4,7 @@ import com.chatwoot.api.account.dto.UserProfileResponse;
 import com.chatwoot.api.account.model.AccountUser;
 import com.chatwoot.api.account.model.User;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -12,6 +13,7 @@ import java.util.List;
 @Component
 public class ProfileMapper {
 
+    @Transactional(readOnly = true)
     public UserProfileResponse userProfile(User user, List<AccountUser> memberships) {
         AccountUser active = memberships.stream()
                 .max((left, right) -> {
@@ -28,7 +30,7 @@ public class ProfileMapper {
                     membership.getAccount().statusName(),
                     membership.getActiveAt(),
                     membership.roleName(),
-                    membership.administrator() ? List.of("*") : List.of(),
+                    List.of(membership.roleName()),
                     membership.availabilityName(),
                     membership.availabilityName(),
                     membership.isAutoOffline(),

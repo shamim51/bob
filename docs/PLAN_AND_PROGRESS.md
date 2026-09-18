@@ -89,6 +89,14 @@ Supporting reads so the conversation page does not 404: account, inboxes, agents
 
 ---
 
+## Frontend (direct port)
+
+The agent dashboard lives in [`web/`](../web/) as a standalone Vite app (Chatwoot Vue copy: dashboard + v3 login + shared + widget helpers). Run `cd web && pnpm install && pnpm dev` and open `/app/login`.
+
+Agent login uses Keycloak Authorization Code + PKCE (same realm/client as silkroad-fe). Point `chatwootConfig.apiHost` at Spring and set `KEYCLOAK_ISSUER_URI` locally to that realm. ActionCable replacement is **not** done.
+
+---
+
 ## 3. Where to start (next session)
 
 Work in **this repo**, not in Chatwoot, unless you are comparing a jbuilder/finder.
@@ -116,6 +124,10 @@ Work in **this repo**, not in Chatwoot, unless you are comparing a jbuilder/find
 - Seed Keycloak users with the same emails as `users.email`.
 
 Until A is done, you can only exercise the API with curl/HTTP files + JWT.
+
+### Frontend (direct port)
+
+The agent dashboard lives in [`web/`](../web/) as a standalone Vite app copied from Chatwoot (`dashboard` + `v3` login + `shared` + `widget` helpers). Run `pnpm install && pnpm dev` in `web/`. Keycloak login is wired in the Vue dashboard. Point `apiHost` at Spring so profile and conversations use Bearer tokens.
 
 **B. Live chatbox (needed for “messages in the right order while the thread is open”)**
 

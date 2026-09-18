@@ -1,7 +1,7 @@
 window.chatwootConfig = {
   hostURL: '',
   helpCenterURL: '',
-  fbAppId: '',
+  fbAppId: '589970336657121',
   instagramAppId: '',
   tiktokAppId: '',
   googleOAuthClientId: '',

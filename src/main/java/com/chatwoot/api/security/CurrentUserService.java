@@ -40,7 +40,7 @@ public class CurrentUserService {
         AccountUser membership = accountUsers.findByAccount_IdAndUser_Id(accountId, user.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not a member of this account"));
         user.setCurrentAccountUser(membership);
-        membership.getUser().setCurrentAccountUser(membership);
+        membership.setUser(user);
         return membership;
     }
 
