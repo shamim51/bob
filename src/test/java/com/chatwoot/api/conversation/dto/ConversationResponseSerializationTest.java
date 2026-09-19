@@ -2,11 +2,10 @@ package com.chatwoot.api.conversation.dto;
 
 import com.chatwoot.api.contact.dto.ContactResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.util.List;
 import java.util.Map;
@@ -15,13 +14,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class ConversationResponseSerializationTest {
 
-    private final ObjectMapper mapper = JsonMapper.builder()
+    private final JsonMapper mapper = JsonMapper.builder()
             .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
-            .serializationInclusion(JsonInclude.Include.ALWAYS)
+            .changeDefaultPropertyInclusion(incl -> JsonInclude.Value.construct(
+                    JsonInclude.Include.ALWAYS, JsonInclude.Include.ALWAYS))
             .build();
 
     @Test
-    void usesDisplayIdAsIdAndOmitsAssigneeWhenNull() throws Exception {
+    void usesDisplayIdAsIdAndOmitsAssigneeWhenNull() {
         ConversationResponse response = new ConversationResponse(
                 new ConversationResponse.ConversationMetaResponse(
                         new ContactResponse(

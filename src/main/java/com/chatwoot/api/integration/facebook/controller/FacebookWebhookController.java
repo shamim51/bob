@@ -2,8 +2,9 @@ package com.chatwoot.api.integration.facebook.controller;
 
 import com.chatwoot.api.integration.facebook.service.FacebookWebhookProcessor;
 import com.chatwoot.api.integration.facebook.service.FacebookWebhookVerifier;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -15,23 +16,21 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.io.IOException;
-
 @RestController
 public class FacebookWebhookController {
 
     private final FacebookWebhookVerifier verifier;
     private final FacebookWebhookProcessor processor;
-    private final ObjectMapper objectMapper;
+    private final JsonMapper jsonMapper;
 
     public FacebookWebhookController(
             FacebookWebhookVerifier verifier,
             FacebookWebhookProcessor processor,
-            ObjectMapper objectMapper
+            JsonMapper jsonMapper
     ) {
         this.verifier = verifier;
         this.processor = processor;
-        this.objectMapper = objectMapper;
+        this.jsonMapper = jsonMapper;
     }
 
     @GetMapping(value = "/bot", produces = MediaType.TEXT_PLAIN_VALUE)
@@ -55,9 +54,9 @@ public class FacebookWebhookController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         try {
-            JsonNode payload = objectMapper.readTree(body);
+            JsonNode payload = jsonMapper.readTree(body);
             processor.process(payload);
-        } catch (IOException ex) {
+        } catch (JacksonException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }
         return ResponseEntity.ok().build();

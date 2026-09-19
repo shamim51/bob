@@ -6,7 +6,7 @@ import com.chatwoot.api.integration.facebook.builder.FacebookMessageBuilder;
 import com.chatwoot.api.integration.facebook.config.FacebookProperties;
 import com.chatwoot.api.integration.facebook.model.FacebookPage;
 import com.chatwoot.api.integration.facebook.repository.FacebookPageRepository;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
