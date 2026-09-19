@@ -64,11 +64,11 @@ public class FacebookGraphClientImpl implements FacebookGraphClient {
     public List<FacebookAccountPage> listPages(String userAccessToken) {
         List<FacebookAccountPage> pages = new ArrayList<>();
         URI first = graphUri("/me/accounts", "access_token", userAccessToken);
-        JsonNode body = restClient.get().uri(first).retrieve().body(JsonNode.class);
+        JsonNode body = getJson(first);
         collectPages(body, pages);
         while (body != null && body.path("paging").path("next").isTextual()) {
             String next = body.path("paging").path("next").asText();
-            body = restClient.get().uri(URI.create(next)).retrieve().body(JsonNode.class);
+            body = getJson(URI.create(next));
             collectPages(body, pages);
         }
         return pages;
@@ -76,10 +76,7 @@ public class FacebookGraphClientImpl implements FacebookGraphClient {
 
     @Override
     public FacebookPageDetails fetchPageDetails(String pageAccessToken) {
-        JsonNode body = restClient.get()
-                .uri(graphUri("/me", "fields", "name,instagram_business_account", "access_token", pageAccessToken))
-                .retrieve()
-                .body(JsonNode.class);
+        JsonNode body = getJson(graphUri("/me", "fields", "name,instagram_business_account", "access_token", pageAccessToken));
         if (body == null) {
             return new FacebookPageDetails(null, null);
         }
@@ -104,12 +101,12 @@ public class FacebookGraphClientImpl implements FacebookGraphClient {
                 {"recipient":{"id":"%s"},"message":{"text":%s},"messaging_type":"RESPONSE"}
                 """.formatted(escape(recipientPsid), jsonString(text));
         try {
-            JsonNode body = restClient.post()
+            JsonNode body = parseJson(restClient.post()
                     .uri(graphUri("/me/messages", "access_token", pageAccessToken))
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(payload)
                     .retrieve()
-                    .body(JsonNode.class);
+                    .body(String.class));
             if (body == null) {
                 return new FacebookSendResult(null, null, "Empty response from Facebook");
             }
@@ -134,10 +131,7 @@ public class FacebookGraphClientImpl implements FacebookGraphClient {
     @Override
     public FacebookUserProfile fetchUserProfile(String pageAccessToken, String psid) {
         try {
-            JsonNode body = restClient.get()
-                    .uri(graphUri("/" + psid, "fields", "first_name,last_name", "access_token", pageAccessToken))
-                    .retrieve()
-                    .body(JsonNode.class);
+            JsonNode body = getJson(graphUri("/" + psid, "fields", "first_name,last_name", "access_token", pageAccessToken));
             if (body == null) {
                 return new FacebookUserProfile(null, null);
             }
@@ -175,6 +169,17 @@ public class FacebookGraphClientImpl implements FacebookGraphClient {
             }
         }
         return null;
+    }
+
+    private JsonNode getJson(URI uri) {
+        return parseJson(restClient.get().uri(uri).retrieve().body(String.class));
+    }
+
+    private JsonNode parseJson(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        return jsonMapper.readTree(raw);
     }
 
     private URI graphUri(String path, String... queryPairs) {

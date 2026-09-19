@@ -53,4 +53,18 @@ class FacebookGraphClientImplTest {
         assertThat(client.exchangeLongLivedToken("short-token")).isEqualTo("long-lived");
         server.verify();
     }
+
+    @Test
+    void listPagesParsesJsonWhenFacebookReturnsTextJavascript() {
+        MediaType facebookJson = MediaType.parseMediaType("text/javascript;charset=UTF-8");
+        server.expect(requestTo("https://graph.facebook.com/v18.0/me/accounts?access_token=user-token"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(
+                        "{\"data\":[{\"id\":\"page-1\",\"name\":\"Shop\",\"access_token\":\"page-token\"}]}",
+                        facebookJson));
+
+        assertThat(client.listPages("user-token")).containsExactly(
+                new FacebookGraphClient.FacebookAccountPage("page-1", "Shop", "page-token"));
+        server.verify();
+    }
 }
