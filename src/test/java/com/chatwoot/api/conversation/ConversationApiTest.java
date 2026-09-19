@@ -21,12 +21,12 @@ import com.chatwoot.api.inbox.repository.InboxMemberRepository;
 import com.chatwoot.api.inbox.repository.InboxRepository;
 import com.chatwoot.api.messaging.repository.MessageRepository;
 import com.chatwoot.api.account.repository.UserRepository;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
@@ -53,7 +53,7 @@ class ConversationApiTest {
     @Autowired
     MockMvc mockMvc;
     @Autowired
-    ObjectMapper objectMapper;
+    JsonMapper objectMapper;
     @Autowired
     AccountRepository accounts;
     @Autowired

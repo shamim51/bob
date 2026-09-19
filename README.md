@@ -18,7 +18,7 @@ The agent dashboard is a separate repo: [shamim51/bob-web](https://github.com/sh
 
 ## Run
 
-Java 21, PostgreSQL.
+Java 25, Spring Boot 4.1.1, PostgreSQL. Gradle 9.1 can run on JDK 25 (`./gradlew` downloads a matching toolchain if needed).
 
 ```bash
 export DATABASE_URL=jdbc:postgresql://localhost:5432/chatwoot_spring
@@ -70,3 +70,37 @@ Open http://localhost:5173/app/login. Production hosting is Vercel; see bob-web 
 | `GET/POST /bot` | Meta webhook verify + HMAC inbound (no JWT) |
 
 Non-admin agents only see conversations for inboxes they were added to. Add yourself on the Add Agents screen after connecting a Page.
+
+## Deploy (`dev`)
+
+Merges to `dev` run GitHub Actions (not pull requests): test, fat jar, Docker Hub image, SSH restart on EC2. No Compose. Image: `$DOCKERHUB_USERNAME/bob:dev` and `:git-sha`. Runtime is Eclipse Temurin 25 with compact object headers, generational Shenandoah, and `-Xms256m -Xmx512m`. AOT cache and JFR are not enabled yet.
+
+### GitHub secrets
+
+| Secret | Use |
+|---|---|
+| `DOCKERHUB_USERNAME` | Docker Hub user / image namespace |
+| `DOCKERHUB_TOKEN` | Hub access token |
+| `EC2_HOST` | Instance IP or DNS |
+| `EC2_USER` | SSH user |
+| `EC2_SSH_KEY` | PEM private key |
+| `EC2_PORT` | Optional; defaults to `22` |
+
+Create a Docker Hub repository named `bob`.
+
+### One-time EC2 setup
+
+Install Docker and add the SSH user to the `docker` group. Open SSH from GitHub Actions and publish **8080** (or terminate TLS in nginx in front of it). Create `/opt/bob/.env` with mode `600`:
+
+```
+DATABASE_URL=jdbc:postgresql://host.docker.internal:5432/sailor
+DATABASE_USERNAME=...
+DATABASE_PASSWORD=...
+KEYCLOAK_ISSUER_URI=https://dev-kc.getsport360.com/realms/test_realm
+CHATWOOT_SEED=false
+FB_APP_ID=...
+FB_APP_SECRET=...
+FB_VERIFY_TOKEN=...
+```
+
+Postgres must already be reachable from the container. `host.docker.internal` works because the workflow adds `--add-host=host.docker.internal:host-gateway`. Flyway runs when the process starts.
