@@ -17,6 +17,8 @@ import com.chatwoot.api.conversation.mapper.ConversationMapper;
 import com.chatwoot.api.conversation.model.Conversation;
 import com.chatwoot.api.conversation.repository.ConversationRepository;
 import com.chatwoot.api.security.CurrentUserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,6 +35,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/accounts/{accountId}/conversations")
 public class ConversationsController {
+
+    private static final Logger log = LoggerFactory.getLogger(ConversationsController.class);
 
     private final CurrentUserService currentUserService;
     private final ConversationFinder conversationFinder;
@@ -131,6 +135,8 @@ public class ConversationsController {
             }
         }
         conversations.save(conversation);
+        log.info("CONVERSATION action=toggle_status result=SAVED conversationDisplayId={} status={}",
+                conversation.getDisplayId(), conversation.statusName());
         return new ToggleStatusResponse(
                 Map.of(),
                 new ToggleStatusResponse.ToggleStatusPayload(
@@ -156,6 +162,8 @@ public class ConversationsController {
             if (raw == null) {
                 conversation.setAssignee(null);
                 conversations.save(conversation);
+                log.info("CONVERSATION action=assign result=SAVED conversationDisplayId={} assigneeId=null",
+                        conversation.getDisplayId());
                 return null;
             }
             Integer assigneeId = ((Number) raw).intValue();
@@ -163,6 +171,8 @@ public class ConversationsController {
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
             conversation.setAssignee(assignee);
             conversations.save(conversation);
+            log.info("CONVERSATION action=assign result=SAVED conversationDisplayId={} assigneeId={}",
+                    conversation.getDisplayId(), assigneeId);
             assignee.setCurrentAccountUser(membership);
             return agents.agent(assignee, accountId);
         }

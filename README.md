@@ -101,6 +101,29 @@ CHATWOOT_SEED=false
 FB_APP_ID=...
 FB_APP_SECRET=...
 FB_VERIFY_TOKEN=...
+DD_SERVICE=bob
+DD_ENV=dev
+DD_LOGS_INJECTION=true
+DD_AGENT_HOST=host.docker.internal
+DD_TRACE_ENABLED=true
 ```
 
 Postgres must already be reachable from the container. `host.docker.internal` works because the workflow adds `--add-host=host.docker.internal:host-gateway`. Flyway runs when the process starts.
+
+## Observability (Datadog)
+
+The app writes **one JSON object per log line** to stdout (`logstash-logback-encoder`). The Datadog Java agent (`dd-java-agent.jar` in the image) injects `dd.trace_id` / `dd.span_id` and auto-instruments Spring, JDBC/Hibernate, and outbound HTTP. A **Datadog Agent on the EC2 host** tails Docker logs and receives traces on port `8126`.
+
+Event lines are grep-friendly, for example:
+
+`FB_WEBHOOK action=inbound_message result=SAVED pageId=123 conversationDisplayId=42`
+
+In Datadog: Logs query `service:bob`, APM service `bob`. Open a log with `dd.trace_id` to jump to the related trace.
+
+### One-time Datadog Agent on EC2
+
+Install the [Datadog Agent](https://docs.datadoghq.com/agent/) with your `DD_API_KEY` and site (`datadoghq.com` or `datadoghq.eu`). Enable **APM** (trace intake `8126`) and **logs**, including Docker log collection (Agent in the `docker` group or with the Docker socket). The deploy workflow labels the Bob container:
+
+`com.datadoghq.ad.logs=[{"source":"java","service":"bob"}]`
+
+Confirm traces from the container reach the host Agent at `host.docker.internal:8126`. The **app** does not need `DD_API_KEY`; only the host Agent does. `DD_VERSION` is set to the git sha on deploy. Dev uses `DD_TRACE_SAMPLE_RATE=1`.

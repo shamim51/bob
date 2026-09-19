@@ -6,6 +6,7 @@ import com.chatwoot.api.integration.facebook.builder.FacebookMessageBuilder;
 import com.chatwoot.api.integration.facebook.config.FacebookProperties;
 import com.chatwoot.api.integration.facebook.model.FacebookPage;
 import com.chatwoot.api.integration.facebook.repository.FacebookPageRepository;
+import com.chatwoot.api.messaging.model.Message;
 import tools.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,6 +56,7 @@ public class FacebookWebhookProcessor {
             try {
                 if (event.echo()) {
                     if (event.sentFromApp(properties.appId())) {
+                        log.info("FB_WEBHOOK action=skip_echo result=SKIPPED reason=own_app");
                         continue;
                     }
                     createAgentMessage(event);
@@ -62,27 +64,39 @@ public class FacebookWebhookProcessor {
                     createContactMessage(event);
                 }
             } catch (RuntimeException ex) {
-                log.error("Error processing Facebook webhook event: {}", ex.getMessage());
+                log.error("FB_WEBHOOK action=process_event result=FAILED message={}", ex.getMessage());
             }
         }
     }
 
     private void createContactMessage(FacebookMessagingEvent event) {
         for (FacebookPage page : facebookPages.findByPageId(event.recipientId())) {
-            Inbox inbox = inboxFor(page);
-            if (inbox != null) {
-                messageBuilder.perform(event, inbox, page, false);
-            }
+            persistWebhookMessage(event, page, false);
         }
     }
 
     private void createAgentMessage(FacebookMessagingEvent event) {
         for (FacebookPage page : facebookPages.findByPageId(event.senderId())) {
-            Inbox inbox = inboxFor(page);
-            if (inbox != null) {
-                messageBuilder.perform(event, inbox, page, true);
-            }
+            persistWebhookMessage(event, page, true);
         }
+    }
+
+    private void persistWebhookMessage(FacebookMessagingEvent event, FacebookPage page, boolean outgoingEcho) {
+        Inbox inbox = inboxFor(page);
+        if (inbox == null) {
+            log.info("FB_WEBHOOK action={} result=SKIPPED reason=inbox_not_found pageId={}",
+                    outgoingEcho ? "echo_message" : "inbound_message", page.getPageId());
+            return;
+        }
+        Message saved = messageBuilder.perform(event, inbox, page, outgoingEcho);
+        if (saved == null) {
+            log.info("FB_WEBHOOK action={} result=SKIPPED pageId={}",
+                    outgoingEcho ? "echo_message" : "inbound_message", page.getPageId());
+            return;
+        }
+        Integer displayId = saved.getConversation() == null ? null : saved.getConversation().getDisplayId();
+        log.info("FB_WEBHOOK action={} result=SAVED pageId={} conversationDisplayId={}",
+                outgoingEcho ? "echo_message" : "inbound_message", page.getPageId(), displayId);
     }
 
     private Inbox inboxFor(FacebookPage page) {

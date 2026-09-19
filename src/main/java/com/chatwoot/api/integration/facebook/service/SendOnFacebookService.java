@@ -52,7 +52,7 @@ public class SendOnFacebookService {
                 text
         );
         if (result.failed()) {
-            log.info("Facebook::SendOnFacebookService: Error sending message to Facebook : Page - {} : {}",
+            log.info("FB_GRAPH action=send_on_facebook result=FAILED pageId={} message={}",
                     page.getPageId(), result.errorMessage());
             message.setStatus(Message.STATUS_FAILED);
             if (result.authorizationError()) {
@@ -65,6 +65,8 @@ public class SendOnFacebookService {
         if (result.messageId() != null) {
             message.setSourceId(result.messageId());
             messages.save(message);
+            log.info("FB_GRAPH action=send_on_facebook result=SUCCESS pageId={} conversationDisplayId={}",
+                    page.getPageId(), message.getConversation().getDisplayId());
         }
     }
 }

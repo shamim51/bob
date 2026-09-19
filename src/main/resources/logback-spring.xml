@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true">
+
+    <springProperty scope="context" name="ddService" source="DD_SERVICE" defaultValue="bob"/>
+    <springProperty scope="context" name="ddEnv" source="DD_ENV" defaultValue="dev"/>
+    <springProperty scope="context" name="ddVersion" source="DD_VERSION" defaultValue="unknown"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeContext>false</includeContext>
+            <customFields>{"service":"${ddService}","env":"${ddEnv}","version":"${ddVersion}"}</customFields>
+
+            <includeMdcKeyName>dd.trace_id</includeMdcKeyName>
+            <includeMdcKeyName>dd.span_id</includeMdcKeyName>
+            <includeMdcKeyName>dd.service</includeMdcKeyName>
+            <includeMdcKeyName>dd.env</includeMdcKeyName>
+            <includeMdcKeyName>dd.version</includeMdcKeyName>
+
+            <includeMdcKeyName>user_agent.original</includeMdcKeyName>
+            <includeMdcKeyName>client.address.anonymized</includeMdcKeyName>
+            <includeMdcKeyName>http.request.method</includeMdcKeyName>
+            <includeMdcKeyName>http.route</includeMdcKeyName>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+</configuration>

@@ -87,7 +87,7 @@ public class CallbacksController {
                 return exchanged;
             }
         } catch (RuntimeException ex) {
-            log.error("Error in long_lived_token: {}", ex.getMessage());
+            log.error("FB_GRAPH action=long_lived_token result=FAILED message={}", ex.getMessage());
         }
         return omniauthToken;
     }
@@ -173,7 +173,7 @@ public class CallbacksController {
         } catch (ResponseStatusException ex) {
             throw ex;
         } catch (RuntimeException ex) {
-            log.error("Error in reauthorize_page: {}", ex.getMessage());
+            log.error("FB_GRAPH action=reauthorize_page result=FAILED message={}", ex.getMessage());
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY);
         }
         InboxResponse mapped = inboxMapper.inbox(inbox);
@@ -191,7 +191,7 @@ public class CallbacksController {
             }
             facebookPages.save(page);
         } catch (RuntimeException ex) {
-            log.error("Error in sync_page_details: {}", ex.getMessage());
+            log.error("FB_GRAPH action=sync_page_details result=FAILED message={}", ex.getMessage());
         }
     }
 

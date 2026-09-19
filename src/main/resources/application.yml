@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: chatwoot-spring
+    name: bob
   jackson:
     property-naming-strategy: SNAKE_CASE
     default-property-inclusion: ALWAYS

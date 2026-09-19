@@ -1,11 +1,14 @@
 package com.chatwoot.api.messaging.builder;
 
 import com.chatwoot.api.conversation.model.Conversation;
+import com.chatwoot.api.inbox.model.Inbox;
 import com.chatwoot.api.messaging.model.Message;
 import com.chatwoot.api.account.model.User;
 import com.chatwoot.api.conversation.repository.ConversationRepository;
 import com.chatwoot.api.messaging.repository.MessageRepository;
 import com.chatwoot.api.messaging.service.SendReplyService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +20,8 @@ import java.util.Map;
  */
 @Service
 public class MessageBuilder {
+
+    private static final Logger log = LoggerFactory.getLogger(MessageBuilder.class);
 
     private final MessageRepository messages;
     private final ConversationRepository conversations;
@@ -66,6 +71,10 @@ public class MessageBuilder {
             conversation.setFirstReplyCreatedAt(saved.getCreatedAt());
         }
         conversations.save(conversation);
+        Inbox inbox = conversation.getInbox();
+        String channel = inbox == null ? "unknown" : inbox.facebookChannel() ? "facebook" : "api";
+        log.info("MESSAGE action=create result=SAVED conversationDisplayId={} messageType={} private={} channel={}",
+                conversation.getDisplayId(), typeName, saved.isPrivateMessage(), channel);
         sendReply.perform(saved);
         return saved;
     }

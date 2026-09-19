@@ -46,17 +46,17 @@ public class FacebookMessageBuilder {
     }
 
     @Transactional
-    public void perform(FacebookMessagingEvent event, Inbox inbox, FacebookPage page, boolean outgoingEcho) {
+    public Message perform(FacebookMessagingEvent event, Inbox inbox, FacebookPage page, boolean outgoingEcho) {
         if (page.isReauthorizationRequired()) {
-            return;
+            return null;
         }
         String senderId = outgoingEcho ? event.recipientId() : event.senderId();
         if (senderId == null) {
-            return;
+            return null;
         }
         String content = event.content();
         if (content == null && event.identifier() == null) {
-            return;
+            return null;
         }
         ContactInbox contactInbox = findOrCreateContactInbox(inbox, page, senderId);
         Conversation conversation = findOrCreateConversation(inbox, contactInbox);
@@ -81,9 +81,10 @@ public class FacebookMessageBuilder {
             message.setSenderId(contactInbox.getContact().getId().longValue());
             message.setSenderContact(contactInbox.getContact());
         }
-        messages.save(message);
-        conversation.setLastActivityAt(message.getCreatedAt());
+        Message saved = messages.save(message);
+        conversation.setLastActivityAt(saved.getCreatedAt());
         conversations.save(conversation);
+        return saved;
     }
 
     private ContactInbox findOrCreateContactInbox(Inbox inbox, FacebookPage page, String sourceId) {

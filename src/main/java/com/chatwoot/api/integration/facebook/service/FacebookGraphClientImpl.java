@@ -55,7 +55,7 @@ public class FacebookGraphClientImpl implements FacebookGraphClient {
             }
             return token;
         } catch (RestClientResponseException ex) {
-            log.error("Error in long_lived_token: {}", ex.getResponseBodyAsString());
+            log.error("FB_GRAPH action=long_lived_token result=FAILED message={}", ex.getResponseBodyAsString());
             throw ex;
         }
     }
@@ -112,18 +112,22 @@ public class FacebookGraphClientImpl implements FacebookGraphClient {
             }
             if (body.has("error")) {
                 JsonNode error = body.get("error");
+                String errorMessage = error.path("message").asText("Facebook error");
+                log.warn("FB_GRAPH action=send_text result=FAILED message={}", errorMessage);
                 return new FacebookSendResult(
                         null,
                         error.path("code").asText(null),
-                        error.path("message").asText("Facebook error")
+                        errorMessage
                 );
             }
-            return new FacebookSendResult(textOrNull(body.path("message_id")), null, null);
+            String messageId = textOrNull(body.path("message_id"));
+            log.info("FB_GRAPH action=send_text result=SUCCESS messageId={}", messageId);
+            return new FacebookSendResult(messageId, null, null);
         } catch (RestClientResponseException ex) {
-            log.warn("Facebook send HTTP error: {}", ex.getResponseBodyAsString());
+            log.warn("FB_GRAPH action=send_text result=FAILED message={}", ex.getResponseBodyAsString());
             return parseErrorBody(ex.getResponseBodyAsString(), ex.getMessage());
         } catch (RestClientException ex) {
-            log.warn("Facebook send failed: {}", ex.getMessage());
+            log.warn("FB_GRAPH action=send_text result=FAILED message={}", ex.getMessage());
             return new FacebookSendResult(null, null, ex.getMessage());
         }
     }
@@ -137,7 +141,7 @@ public class FacebookGraphClientImpl implements FacebookGraphClient {
             }
             return new FacebookUserProfile(textOrNull(body.path("first_name")), textOrNull(body.path("last_name")));
         } catch (RestClientException ex) {
-            log.warn("Facebook profile fetch failed for {}: {}", psid, ex.getMessage());
+            log.warn("FB_GRAPH action=fetch_profile result=FAILED message={}", ex.getMessage());
             return new FacebookUserProfile(null, null);
         }
     }
