@@ -75,6 +75,25 @@ Each feature uses:
 
 Cross-feature imports are expected (JPA FKs, nested JSON). Facebook lives under `integration.facebook`. Further channels (`integration.instagram`, WhatsApp, …) start as new packages when that slice starts — do not create empty `integration` packages ahead of time.
 
+## JPA / LazyInitializationException
+
+`spring.jpa.open-in-view` is **`false`** on purpose. Repository and finder queries close the persistence context when they return. Controllers and mappers then run on **detached** entities.
+
+If a mapper reads a lazy association (anything except the entity **primary key** on a proxy), Hibernate throws `LazyInitializationException: Could not initialize proxy … - no session`.
+
+Chatwoot `conversation_id` in message JSON is `display_id`, not `conversations.id`. `message.getConversation().getId()` is safe; `getDisplayId()` is not, unless `conversation` was join-fetched or the parent already passed `displayId` into the mapper.
+
+**Do this instead of turning OSIV back on:**
+
+- `join fetch` / Criteria `root.fetch(...)` / `@EntityGraph` for every association the mapper reads
+- Pass already-loaded scalar values into nested mappers (e.g. `MessageMapper.message(message, conversation.getDisplayId())`)
+- Hydrate transient bits (`MessageHydrator`) before mapping senders
+- `@Transactional(readOnly = true)` on a mapper only as a last resort when the graph is awkward (profile). Do not put `@Transactional` on list controllers or conversation/message mappers to hide missing fetches
+
+Examples already in the tree: `ConversationFinder` fetches `inbox`/`contact`/`assignee`/`contactInbox`; `ConversationRepository.findByAccountIdAndDisplayId` uses `join fetch`; `AccountUserRepository` uses `@EntityGraph`; message list queries fetch `m.conversation`.
+
+`@Transactional` on a Spring MVC test keeps a session open for MockMvc and **will not catch this**. Add at least one request test without a class-level transaction (see `ConversationListLazyInitTest`).
+
 ## Rules
 
 - Same URL paths, query params, status codes, and JSON keys as Chatwoot

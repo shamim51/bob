@@ -4,7 +4,7 @@ Independent Spring Boot resource server that copies Chatwoot REST contracts. Not
 
 The agent dashboard is a separate repo: [shamim51/bob-web](https://github.com/shamim51/bob-web) (local clone: `../bob-web`).
 
-**Read first:** [docs/PLAN_AND_PROGRESS.md](docs/PLAN_AND_PROGRESS.md) — what shipped, Facebook setup, and remaining gaps. Agent coding rules: [agents.md](agents.md).
+**Read first:** [docs/PLAN_AND_PROGRESS.md](docs/PLAN_AND_PROGRESS.md) — what shipped, Facebook setup, and remaining gaps. Observability: [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md). Hibernate sessions: [docs/LAZY_INITIALIZATION.md](docs/LAZY_INITIALIZATION.md). Agent coding rules: [agents.md](agents.md).
 
 ## Scope
 
@@ -112,35 +112,8 @@ Postgres must already be reachable from the container. `host.docker.internal` wo
 
 ## Observability (Datadog)
 
-The app writes **one JSON object per log line** to stdout (`logstash-logback-encoder`). The Datadog Java agent (`dd-java-agent.jar` in the image) injects `dd.trace_id` / `dd.span_id` and auto-instruments Spring, JDBC/Hibernate, and outbound HTTP. Traces go to the **Datadog Agent container** on port `8126` (not to the EC2 host).
+Full write-up: [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md).
 
-Event lines are grep-friendly, for example:
+Stdout is **JSON** today (not Spring Boot’s pretty console). We will switch to human-readable lines later; Datadog already shows the JSON `message` field.
 
-`FB_WEBHOOK action=inbound_message result=SAVED pageId=123 conversationDisplayId=42`
-
-In Datadog: Logs query `service:bob`, APM service `bob`. Open a log with `dd.trace_id` to jump to the related trace.
-
-### Datadog Agent as a Docker container
-
-JSON **logs** can show up even when **traces** fail. `Failed to connect to host.docker.internal:8126` is expected if the Agent is another container: APM is inside that container, not on `172.17.0.1`.
-
-Put both containers on the same user-defined network (`datadog`). Deploy attaches `bob` to that network and connects `dd-agent` if it exists.
-
-On the **Agent** container, APM must accept traffic from other containers. If `dd-agent` is already running:
-
-```bash
-docker network create datadog 2>/dev/null || true
-docker network connect datadog dd-agent
-```
-
-It also needs `DD_APM_ENABLED=true` and `DD_APM_NON_LOCAL_TRAFFIC=true` (recreate the Agent container if those env vars are missing).
-
-Do **not** set `DD_AGENT_HOST=host.docker.internal` unless you published `-p 8126:8126` on the Agent.
-
-Check:
-
-```bash
-docker exec bob wget -qO- http://dd-agent:8126/info
-```
-
-The **app** does not need `DD_API_KEY`. `DD_VERSION` is the git sha on deploy. Dev uses `DD_TRACE_SAMPLE_RATE=1`. Dynamic Instrumentation is off so the tracer does not spam `/debugger/v1/diagnostics` when the Agent is unreachable. The Bob container is labeled `com.datadoghq.ad.logs=[{"source":"java","service":"bob"}]`.
+Traces go to the **`dd-agent` container** on port 8126 (`DD_AGENT_HOST=dd-agent`, Docker network `datadog`). Do not use `host.docker.internal` for traces. Logs: `service:bob`. APM: service `bob`.

@@ -8,6 +8,7 @@ import com.bob.api.conversation.dto.ConversationResponse;
 import com.bob.api.conversation.model.Conversation;
 import com.bob.api.inbox.model.Inbox;
 import com.bob.api.messaging.dto.MessageResponse;
+import com.bob.api.messaging.mapper.MessageHydrator;
 import com.bob.api.messaging.mapper.MessageMapper;
 import com.bob.api.messaging.model.Message;
 import com.bob.api.messaging.repository.MessageRepository;
@@ -25,17 +26,20 @@ public class ConversationMapper {
     private final ContactMapper contacts;
     private final AgentMapper agents;
     private final MessageMapper messageMapper;
+    private final MessageHydrator hydrator;
 
     public ConversationMapper(
             MessageRepository messages,
             ContactMapper contacts,
             AgentMapper agents,
-            MessageMapper messageMapper
+            MessageMapper messageMapper,
+            MessageHydrator hydrator
     ) {
         this.messages = messages;
         this.contacts = contacts;
         this.agents = agents;
         this.messageMapper = messageMapper;
+        this.hydrator = hydrator;
     }
 
     public ConversationResponse conversation(Conversation conversation) {
@@ -54,13 +58,22 @@ public class ConversationMapper {
                 conversation.getContactInbox() != null && conversation.getContactInbox().isHmacVerified()
         );
 
+        Integer displayId = conversation.getDisplayId();
         List<Message> latest = messages.findLatestFirst(conversation.getId());
-        List<MessageResponse> embedded = latest.isEmpty()
-                ? List.of()
-                : List.of(messageMapper.message(latest.getFirst()));
+        List<MessageResponse> embedded = List.of();
+        if (!latest.isEmpty()) {
+            Message latestMessage = latest.getFirst();
+            hydrator.hydrate(latestMessage);
+            embedded = List.of(messageMapper.message(latestMessage, displayId));
+        }
 
         List<Message> nonActivity = messages.findNonActivityDesc(conversation.getId(), conversation.getAccountId());
-        MessageResponse lastNonActivity = nonActivity.isEmpty() ? null : messageMapper.message(nonActivity.getFirst());
+        MessageResponse lastNonActivity = null;
+        if (!nonActivity.isEmpty()) {
+            Message last = nonActivity.getFirst();
+            hydrator.hydrate(last);
+            lastNonActivity = messageMapper.message(last, displayId);
+        }
 
         return new ConversationResponse(
                 meta,

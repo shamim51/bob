@@ -21,12 +21,16 @@ public class MessageMapper {
 
     public MessageResponse message(Message message) {
         Conversation conversation = message.getConversation();
+        return message(message, conversation == null ? null : conversation.getDisplayId());
+    }
+
+    public MessageResponse message(Message message, Integer conversationDisplayId) {
         return new MessageResponse(
                 message.getId(),
                 message.getContent(),
                 message.getInboxId(),
                 message.getEchoId(),
-                conversation == null ? null : conversation.getDisplayId(),
+                conversationDisplayId,
                 message.getMessageType(),
                 message.contentTypeName(),
                 message.statusName(),

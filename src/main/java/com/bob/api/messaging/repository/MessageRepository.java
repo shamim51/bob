@@ -12,6 +12,7 @@ public interface MessageRepository extends JpaRepository<Message, Integer> {
 
     @Query("""
             select m from Message m
+            join fetch m.conversation
             where m.conversation.id = :conversationPk
             order by m.createdAt desc, m.id desc
             """)
@@ -36,6 +37,7 @@ public interface MessageRepository extends JpaRepository<Message, Integer> {
 
     @Query("""
             select m from Message m
+            join fetch m.conversation
             where m.conversation.id = :conversationPk
               and m.accountId = :accountId
               and m.messageType <> 2

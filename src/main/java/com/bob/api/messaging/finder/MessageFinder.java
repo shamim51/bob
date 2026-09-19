@@ -42,7 +42,7 @@ public class MessageFinder {
 
     private List<Message> messagesAfter(Conversation conversation, int afterId) {
         TypedQuery<Message> query = entityManager.createQuery(
-                "select m from Message m where m.conversation.id = :cid and m.id > :after order by m.createdAt asc, m.id asc",
+                "select m from Message m join fetch m.conversation where m.conversation.id = :cid and m.id > :after order by m.createdAt asc, m.id asc",
                 Message.class);
         query.setParameter("cid", conversation.getId());
         query.setParameter("after", afterId);
@@ -56,7 +56,7 @@ public class MessageFinder {
         }
         int id = normalized(beforeId);
         TypedQuery<Message> query = entityManager.createQuery(
-                "select m from Message m where m.conversation.id = :cid and m.id < :before order by m.createdAt desc, m.id desc",
+                "select m from Message m join fetch m.conversation where m.conversation.id = :cid and m.id < :before order by m.createdAt desc, m.id desc",
                 Message.class);
         query.setParameter("cid", conversation.getId());
         query.setParameter("before", id);
@@ -67,7 +67,7 @@ public class MessageFinder {
     }
 
     private List<Message> messagesBetween(Conversation conversation, int afterId, Integer beforeId) {
-        String jpql = "select m from Message m where m.conversation.id = :cid and m.id >= :after";
+        String jpql = "select m from Message m join fetch m.conversation where m.conversation.id = :cid and m.id >= :after";
         if (!oversized(beforeId)) {
             jpql += " and m.id < :before";
         }
@@ -84,7 +84,7 @@ public class MessageFinder {
 
     private List<Message> messagesLatest(Conversation conversation) {
         TypedQuery<Message> query = entityManager.createQuery(
-                "select m from Message m where m.conversation.id = :cid order by m.createdAt desc, m.id desc",
+                "select m from Message m join fetch m.conversation where m.conversation.id = :cid order by m.createdAt desc, m.id desc",
                 Message.class);
         query.setParameter("cid", conversation.getId());
         query.setMaxResults(20);
