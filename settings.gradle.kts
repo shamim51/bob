@@ -1,1 +1,1 @@
-rootProject.name = "chatwoot-spring"
+rootProject.name = "bob"

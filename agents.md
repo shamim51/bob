@@ -40,10 +40,10 @@ Do **not** build responses with `Map<String, Object>` or a shared JSON bag. Use 
 
 ## Package map
 
-Root: `com.chatwoot.api`. Layout is **package-by-feature**:
+Root: `com.bob.api`. Layout is **package-by-feature**:
 
 ```
-com.chatwoot.api
+com.bob.api
 ├── config/           # SecurityConfig, Cors, seed
 ├── security/         # CurrentUserService (JWT → user by email)
 ├── shared/dto/       # ChatwootTimestamps, PayloadResponse

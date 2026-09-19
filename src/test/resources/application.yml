@@ -3,7 +3,7 @@ spring:
     property-naming-strategy: SNAKE_CASE
     default-property-inclusion: ALWAYS
   datasource:
-    url: jdbc:h2:mem:chatwoot;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1
+    url: jdbc:h2:mem:bob;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
     username: sa
     password:
@@ -20,7 +20,7 @@ spring:
     exclude:
       - org.springframework.boot.security.oauth2.server.resource.autoconfigure.servlet.OAuth2ResourceServerAutoConfiguration
 
-chatwoot:
+bob:
   conversation-results-per-page: 25
   seed:
     enabled: false

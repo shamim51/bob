@@ -1,4 +1,4 @@
-# Bob (chatwoot-spring)
+# Bob
 
 Independent Spring Boot resource server that copies Chatwoot REST contracts. Not a Rails fork.
 
@@ -21,9 +21,9 @@ The agent dashboard is a separate repo: [shamim51/bob-web](https://github.com/sh
 Java 25, Spring Boot 4.1.1, PostgreSQL. Gradle 9.1 can run on JDK 25 (`./gradlew` downloads a matching toolchain if needed).
 
 ```bash
-export DATABASE_URL=jdbc:postgresql://localhost:5432/chatwoot_spring
-export KEYCLOAK_ISSUER_URI=http://localhost:8081/realms/chatwoot
-export CHATWOOT_SEED=true
+export DATABASE_URL=jdbc:postgresql://localhost:5432/bob
+export KEYCLOAK_ISSUER_URI=http://localhost:8081/realms/bob
+export BOB_SEED=true
 export FB_APP_ID=          # must match bob-web public/window-config.js fbAppId
 export FB_APP_SECRET=
 export FB_VERIFY_TOKEN=    # Meta webhook verify token
@@ -97,7 +97,7 @@ DATABASE_URL=jdbc:postgresql://host.docker.internal:5432/sailor
 DATABASE_USERNAME=...
 DATABASE_PASSWORD=...
 KEYCLOAK_ISSUER_URI=https://dev-kc.getsport360.com/realms/test_realm
-CHATWOOT_SEED=false
+BOB_SEED=false
 FB_APP_ID=...
 FB_APP_SECRET=...
 FB_VERIFY_TOKEN=...

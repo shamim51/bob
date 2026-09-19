@@ -35,7 +35,7 @@ Hour context (agentic, one engineer), for orientation only:
 
 ## 2. What we did (first run)
 
-Location: `/home/newroz/open-source/chatwoot-spring`
+Location: `/home/shamim/open-source/bob`
 
 Stack: Java 21, Spring Boot 3.4, Gradle, JPA, Flyway, PostgreSQL (H2 in tests), OAuth2 resource server.
 
@@ -90,7 +90,7 @@ Supporting reads so the conversation page does not 404: account, inboxes, agents
 
 ## 2b. Facebook Messenger (shipped)
 
-Package: `com.chatwoot.api.integration.facebook`. Vue wizard is in [bob-web](https://github.com/shamim51/bob-web); backend matches Chatwoot paths and JSON.
+Package: `com.bob.api.integration.facebook`. Vue wizard is in [bob-web](https://github.com/shamim51/bob-web); backend matches Chatwoot paths and JSON.
 
 ### Product journey
 
@@ -140,7 +140,7 @@ Work in **this repo**, not in Chatwoot, unless you are comparing a jbuilder/find
 
 ### Start here if you are new
 
-1. Open `/home/newroz/open-source/chatwoot-spring`.
+1. Open `/home/shamim/open-source/bob`.
 2. Read this file, then `README.md`.
 3. Run tests: `./gradlew test`.
 4. Compare JSON to Chatwoot sources of truth (do not “improve” the shape). Map each jbuilder to a DTO in the feature’s `dto` package:
@@ -185,7 +185,7 @@ Dashboard: [shamim51/bob-web](https://github.com/shamim51/bob-web) (`../bob-web`
 
 ### Map of this codebase
 
-Package-by-feature under `com.chatwoot.api`. Each feature owns `controller`, `model`, `repository`, `dto`, `mapper`, and (when Chatwoot has them) `finder` / `builder`.
+Package-by-feature under `com.bob.api`. Each feature owns `controller`, `model`, `repository`, `dto`, `mapper`, and (when Chatwoot has them) `finder` / `builder`.
 
 | Package | Role (Chatwoot analogue) |
 |---|---|
@@ -207,11 +207,11 @@ Package-by-feature under `com.chatwoot.api`. Each feature owns `controller`, `mo
 Java 21, PostgreSQL, Keycloak realm with an issuer URI.
 
 ```bash
-export DATABASE_URL=jdbc:postgresql://localhost:5432/chatwoot_spring
+export DATABASE_URL=jdbc:postgresql://localhost:5432/bob
 export DATABASE_USERNAME=postgres
 export DATABASE_PASSWORD=postgres
-export KEYCLOAK_ISSUER_URI=http://localhost:8081/realms/chatwoot
-export CHATWOOT_SEED=true
+export KEYCLOAK_ISSUER_URI=http://localhost:8081/realms/bob
+export BOB_SEED=true
 export FB_APP_ID=
 export FB_APP_SECRET=
 export FB_VERIFY_TOKEN=

@@ -27,10 +27,10 @@ spring:
         jwt:
           issuer-uri: ${KEYCLOAK_ISSUER_URI:https://dev-kc.getsport360.com/realms/test_realm}
 
-chatwoot:
+bob:
   conversation-results-per-page: 25
   seed:
-    enabled: ${CHATWOOT_SEED:false}
+    enabled: ${BOB_SEED:false}
   facebook:
     app-id: ${FB_APP_ID:}
     app-secret: ${FB_APP_SECRET:}
@@ -39,4 +39,4 @@ chatwoot:
 
 logging:
   level:
-    com.chatwoot.api: INFO
+    com.bob.api: INFO

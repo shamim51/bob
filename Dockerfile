@@ -5,7 +5,7 @@ WORKDIR /app
 ARG DD_JAVA_AGENT_VERSION=1.66.0
 ADD https://github.com/DataDog/dd-trace-java/releases/download/v${DD_JAVA_AGENT_VERSION}/dd-java-agent.jar /app/dd-java-agent.jar
 
-COPY build/libs/chatwoot-spring-0.1.0.jar app.jar
+COPY build/libs/bob-0.1.0.jar app.jar
 
 EXPOSE 8080
 

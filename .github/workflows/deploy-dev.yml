@@ -19,7 +19,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: app-jar
-          path: build/libs/chatwoot-spring-0.1.0.jar
+          path: build/libs/bob-0.1.0.jar
 
   image:
     needs: ci
