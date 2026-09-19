@@ -63,12 +63,20 @@ jobs:
             set -euo pipefail
             echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
             docker pull "$IMAGE:dev"
+            docker network create datadog 2>/dev/null || true
+            if docker inspect dd-agent >/dev/null 2>&1; then
+              docker network connect datadog dd-agent 2>/dev/null || true
+            fi
             docker stop bob || true
             docker rm bob || true
             docker run -d --name bob --restart unless-stopped \
+              --network datadog \
               --env-file /opt/bob/.env \
               -e DD_VERSION="$GITHUB_SHA" \
               -e DD_TRACE_SAMPLE_RATE=1 \
+              -e DD_DYNAMIC_INSTRUMENTATION_ENABLED=false \
+              -e DD_SYMBOL_DATABASE_UPLOAD_ENABLED=false \
+              -e DD_REMOTE_CONFIGURATION_ENABLED=false \
               -p 8080:8080 \
               --add-host=host.docker.internal:host-gateway \
               --label com.datadoghq.ad.logs='[{"source":"java","service":"bob"}]' \
