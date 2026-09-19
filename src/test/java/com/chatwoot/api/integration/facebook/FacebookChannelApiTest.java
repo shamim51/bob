@@ -157,6 +157,22 @@ class FacebookChannelApiTest {
     }
 
     @Test
+    void facebookPagesUsesOmniauthTokenWhenLongLivedExchangeFails() throws Exception {
+        when(graph.exchangeLongLivedToken(any())).thenThrow(new RuntimeException("Error validating client secret"));
+        when(graph.listPages("short-token")).thenReturn(List.of(
+                new FacebookGraphClient.FacebookAccountPage("page-1", "Shop", "page-token-1")
+        ));
+
+        mockMvc.perform(post("/api/v1/accounts/{id}/callbacks/facebook_pages.json", accountId)
+                        .with(jwt().jwt(jwt -> jwt.claim("email", "fb-agent@example.com")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"omniauth_token\":\"short-token\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.page_details[0].id").value("page-1"))
+                .andExpect(jsonPath("$.data.user_access_token").value("short-token"));
+    }
+
+    @Test
     void registerFacebookPageCreatesInboxAndListIncludesPageId() throws Exception {
         mockMvc.perform(post("/api/v1/accounts/{id}/callbacks/register_facebook_page", accountId)
                         .with(jwt().jwt(jwt -> jwt.claim("email", "fb-agent@example.com")))

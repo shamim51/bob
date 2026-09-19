@@ -65,24 +65,31 @@ public class CallbacksController {
         if (request == null || request.omniauthToken() == null || request.omniauthToken().isBlank()) {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "omniauth_token is required");
         }
+        String userAccessToken = longLivedToken(request.omniauthToken());
+        List<FacebookGraphClient.FacebookAccountPage> pages = graph.listPages(userAccessToken);
+        Set<String> existing = new HashSet<>(facebookPages.findPageIdsByAccountId(accountId));
+        List<FacebookPageDetailResponse> details = pages.stream()
+                .filter(page -> page.id() != null)
+                .map(page -> new FacebookPageDetailResponse(
+                        page.id(),
+                        page.name(),
+                        page.accessToken(),
+                        existing.contains(page.id())
+                ))
+                .toList();
+        return new FacebookPagesResponse(new FacebookPagesResponse.Data(details, userAccessToken));
+    }
+
+    private String longLivedToken(String omniauthToken) {
         try {
-            String userAccessToken = graph.exchangeLongLivedToken(request.omniauthToken());
-            List<FacebookGraphClient.FacebookAccountPage> pages = graph.listPages(userAccessToken);
-            Set<String> existing = new HashSet<>(facebookPages.findPageIdsByAccountId(accountId));
-            List<FacebookPageDetailResponse> details = pages.stream()
-                    .filter(page -> page.id() != null)
-                    .map(page -> new FacebookPageDetailResponse(
-                            page.id(),
-                            page.name(),
-                            page.accessToken(),
-                            existing.contains(page.id())
-                    ))
-                    .toList();
-            return new FacebookPagesResponse(new FacebookPagesResponse.Data(details, userAccessToken));
+            String exchanged = graph.exchangeLongLivedToken(omniauthToken);
+            if (exchanged != null && !exchanged.isBlank()) {
+                return exchanged;
+            }
         } catch (RuntimeException ex) {
-            log.error("Error in facebook_pages: {}", ex.getMessage());
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Unable to fetch Facebook pages");
+            log.error("Error in long_lived_token: {}", ex.getMessage());
         }
+        return omniauthToken;
     }
 
     @PostMapping("/callbacks/register_facebook_page")
