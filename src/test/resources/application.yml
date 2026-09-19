@@ -24,3 +24,8 @@ chatwoot:
   conversation-results-per-page: 25
   seed:
     enabled: false
+  facebook:
+    app-id: test-app-id
+    app-secret: test-secret
+    verify-token: test-verify
+    api-version: v18.0

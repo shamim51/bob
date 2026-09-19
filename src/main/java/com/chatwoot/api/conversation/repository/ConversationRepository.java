@@ -17,4 +17,12 @@ public interface ConversationRepository extends JpaRepository<Conversation, Inte
             where c.accountId = :accountId and c.displayId = :displayId
             """)
     Optional<Conversation> findByAccountIdAndDisplayId(@Param("accountId") Integer accountId, @Param("displayId") Integer displayId);
+
+    Optional<Conversation> findFirstByInbox_IdAndContact_IdOrderByCreatedAtDesc(Integer inboxId, Integer contactId);
+
+    Optional<Conversation> findFirstByInbox_IdAndContact_IdAndStatusNotOrderByCreatedAtDesc(
+            Integer inboxId,
+            Integer contactId,
+            Integer status
+    );
 }

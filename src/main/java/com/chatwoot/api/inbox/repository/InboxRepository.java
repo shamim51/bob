@@ -10,4 +10,6 @@ public interface InboxRepository extends JpaRepository<Inbox, Integer> {
     List<Inbox> findByAccountId(Integer accountId);
 
     Optional<Inbox> findByIdAndAccountId(Integer id, Integer accountId);
+
+    Optional<Inbox> findByChannelTypeAndChannelId(String channelType, Integer channelId);
 }

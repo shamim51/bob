@@ -1,5 +1,7 @@
 package com.chatwoot.api.inbox.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +25,9 @@ public record InboxResponse(
         Boolean allowMessagesAfterResolved,
         boolean lockToSingleConversation,
         String senderNameType,
-        String businessName
+        String businessName,
+        @JsonInclude(JsonInclude.Include.NON_NULL) String pageId,
+        @JsonInclude(JsonInclude.Include.NON_NULL) String providerName,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Boolean reauthorizationRequired
 ) {
 }

@@ -5,6 +5,7 @@ import com.chatwoot.api.messaging.model.Message;
 import com.chatwoot.api.account.model.User;
 import com.chatwoot.api.conversation.repository.ConversationRepository;
 import com.chatwoot.api.messaging.repository.MessageRepository;
+import com.chatwoot.api.messaging.service.SendReplyService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,17 +13,19 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Port of Chatwoot Messages::MessageBuilder (persist + last_activity_at). Channel send is skipped.
+ * Port of Chatwoot Messages::MessageBuilder (persist + last_activity_at + channel send).
  */
 @Service
 public class MessageBuilder {
 
     private final MessageRepository messages;
     private final ConversationRepository conversations;
+    private final SendReplyService sendReply;
 
-    public MessageBuilder(MessageRepository messages, ConversationRepository conversations) {
+    public MessageBuilder(MessageRepository messages, ConversationRepository conversations, SendReplyService sendReply) {
         this.messages = messages;
         this.conversations = conversations;
+        this.sendReply = sendReply;
     }
 
     @Transactional
@@ -63,6 +66,7 @@ public class MessageBuilder {
             conversation.setFirstReplyCreatedAt(saved.getCreatedAt());
         }
         conversations.save(conversation);
+        sendReply.perform(saved);
         return saved;
     }
 

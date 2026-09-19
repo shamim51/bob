@@ -20,6 +20,7 @@ import java.util.Map;
 public class Inbox {
 
     public static final String CHANNEL_API = "Channel::Api";
+    public static final String CHANNEL_FACEBOOK = "Channel::FacebookPage";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -141,6 +142,10 @@ public class Inbox {
         return enableAutoAssignment;
     }
 
+    public void setEnableAutoAssignment(Boolean enableAutoAssignment) {
+        this.enableAutoAssignment = enableAutoAssignment;
+    }
+
     public Boolean getGreetingEnabled() {
         return greetingEnabled;
     }
@@ -199,5 +204,9 @@ public class Inbox {
 
     public boolean apiChannel() {
         return CHANNEL_API.equals(channelType);
+    }
+
+    public boolean facebookChannel() {
+        return CHANNEL_FACEBOOK.equals(channelType);
     }
 }

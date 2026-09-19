@@ -52,6 +52,7 @@ com.chatwoot.api
 ├── inbox/
 ├── conversation/
 ├── messaging/
+├── integration.facebook/  # callbacks, /bot webhook, Graph send
 ├── notification/     # stub unread/list
 ├── label/            # stub
 ├── team/             # stub
@@ -72,7 +73,7 @@ Each feature uses:
 | `builder/` | `app/builders/*` — only inside the feature |
 | `service/` | other feature services (e.g. display_id sequence) |
 
-Cross-feature imports are expected (JPA FKs, nested JSON). Channels (Facebook, Instagram, …) go under `integration.facebook` / `integration.instagram` when that slice starts — do not create empty `integration` packages ahead of time.
+Cross-feature imports are expected (JPA FKs, nested JSON). Facebook lives under `integration.facebook`. Further channels (`integration.instagram`, WhatsApp, …) start as new packages when that slice starts — do not create empty `integration` packages ahead of time.
 
 ## Rules
 

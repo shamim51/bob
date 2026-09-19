@@ -2,6 +2,8 @@ package com.chatwoot.api.inbox.mapper;
 
 import com.chatwoot.api.inbox.dto.InboxResponse;
 import com.chatwoot.api.inbox.model.Inbox;
+import com.chatwoot.api.integration.facebook.model.FacebookPage;
+import com.chatwoot.api.integration.facebook.repository.FacebookPageRepository;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -9,7 +11,16 @@ import java.util.List;
 @Component
 public class InboxMapper {
 
+    private final FacebookPageRepository facebookPages;
+
+    public InboxMapper(FacebookPageRepository facebookPages) {
+        this.facebookPages = facebookPages;
+    }
+
     public InboxResponse inbox(Inbox inbox) {
+        FacebookPage page = inbox.facebookChannel()
+                ? facebookPages.findById(inbox.getChannelId()).orElse(null)
+                : null;
         return new InboxResponse(
                 inbox.getId(),
                 "",
@@ -30,7 +41,10 @@ public class InboxMapper {
                 inbox.getAllowMessagesAfterResolved(),
                 inbox.isLockToSingleConversation(),
                 inbox.senderNameTypeName(),
-                inbox.getBusinessName()
+                inbox.getBusinessName(),
+                page == null ? null : page.getPageId(),
+                page == null ? null : page.getProviderName(),
+                page == null ? null : page.isReauthorizationRequired()
         );
     }
 }

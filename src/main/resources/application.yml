@@ -31,6 +31,11 @@ chatwoot:
   conversation-results-per-page: 25
   seed:
     enabled: ${CHATWOOT_SEED:false}
+  facebook:
+    app-id: ${FB_APP_ID:}
+    app-secret: ${FB_APP_SECRET:}
+    verify-token: ${FB_VERIFY_TOKEN:}
+    api-version: ${FACEBOOK_API_VERSION:v18.0}
 
 logging:
   level:
