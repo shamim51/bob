@@ -9,6 +9,3 @@ out/
 bin/
 .env
 application-local.yml
-web/node_modules/
-web/dist/
-web/.vite/

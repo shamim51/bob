@@ -4,6 +4,9 @@
 			"path": "."
 		},
 		{
+			"path": "../bob-web"
+		},
+		{
 			"path": "../chatwoot"
 		}
 	],

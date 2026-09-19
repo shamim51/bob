@@ -41,7 +41,7 @@ Stack: Java 21, Spring Boot 3.4, Gradle, JPA, Flyway, PostgreSQL (H2 in tests), 
 
 ### Auth
 
-- JWT required on all APIs except nothing public yet (Facebook webhook comes later).
+- JWT required on `/api/**`. Public: `/actuator/health` and Facebook webhook `GET/POST /bot` (Meta HMAC, not JWT).
 - `CurrentUserService` reads JWT `email` (fallback `preferred_username`), loads `users` + `account_users`. Unknown email → 401.
 - `GET /api/v1/profile` → `{ payload: { success, data } }` in Chatwoot user shape (`accounts[]`, `ui_settings`, `pubsub_token`).
 
@@ -49,7 +49,7 @@ Stack: Java 21, Spring Boot 3.4, Gradle, JPA, Flyway, PostgreSQL (H2 in tests), 
 
 `accounts`, `users`, `account_users`, `inboxes`, `inbox_members`, `contacts`, `contact_inboxes`, `conversations`, `messages`, plus a `conversation_display_id_counters` table (Chatwoot uses per-account sequences).
 
-Inbox `channel_type` is a string (`Channel::Api` in seed). Message `message_type` / `status` / `content_type` are integers in the DB; JSON uses Chatwoot’s mix (integer `message_type`, string `status` like `"sent"`).
+Inbox `channel_type` is a string (`Channel::Api` in seed, `Channel::FacebookPage` for Messenger). `channel_id` points at the channel table (`channel_facebook_pages.id` for Facebook). Message `message_type` / `status` / `content_type` are integers in the DB; JSON uses Chatwoot’s mix (integer `message_type`, string `status` like `"sent"`).
 
 ### Conversation APIs (ported behavior)
 
@@ -59,7 +59,7 @@ Inbox `channel_type` is a string (`Channel::Api` in seed). Message `message_type
 | GET | `.../conversations/meta` | Same counts |
 | GET | `.../conversations/{displayId}` | Conversation partial |
 | GET | `.../messages` | `MessageFinder`: latest 20 asc; `before` 20 then reverse; `after` 100 |
-| POST | `.../messages` | `MessageBuilder`; `echo_id` not persisted; returned on JSON; `last_activity_at` = message `created_at` |
+| POST | `.../messages` | `MessageBuilder`; `echo_id` not persisted; returned on JSON; Facebook inboxes then Graph-send and set `source_id` |
 | POST | `.../update_last_seen` | `agent_last_seen_at` |
 | POST | `.../toggle_status` | open / resolved / pending / snoozed |
 | POST | `.../assignments` | `assignee_id` |
@@ -71,29 +71,66 @@ Supporting reads so the conversation page does not 404: account, inboxes, agents
 - Display order: `created_at` ascending (tie-break `id`).
 - Pagination cursor: message **primary key**, not timestamp.
 - Optimistic send: client UUID `echo_id` on the create response only.
-- Private notes persist; there is no channel send yet anyway.
-- API inbox: `can_reply` is true (same as Chatwoot `Channel::Api` without a reply window).
+- Private notes persist and are **not** sent to Facebook.
+- API inbox: `can_reply` is true. Facebook (and any non-API inbox): `can_reply` follows a 24h window from the last incoming message.
 
 ### Tests
 
-`./gradlew test` — MessageFinder latest/before/after, list uses `display_id`, POST returns `echo_id` and bumps `last_activity_at`, profile/inboxes/agents.
+`./gradlew test` — MessageFinder latest/before/after, list uses `display_id`, POST returns `echo_id` and bumps `last_activity_at`, profile/inboxes/agents, Facebook callbacks/webhook/send/inbox members.
 
-### Intentionally not done
+### Intentionally not done (still)
 
-- Vue Keycloak login / Axios Bearer adapter (dashboard still speaks Devise headers).
-- ActionCable / live `message.created`.
-- Facebook Messenger webhook + Graph send.
-- Captain / Spring AI.
-- My Inbox (notifications center) as a product.
-- Attachments, labels as first-class data, teams, custom roles.
+- ActionCable / live `message.created` (refresh Conversations to see inbound Facebook messages).
+- `GET .../assignable_agents` (conversation assign-agent dropdown).
+- `GET .../inboxes/:id` (inbox settings after create).
+- Attachments, avatars, delivery/read receipts, Instagram-on-page DMs.
+- WhatsApp, Captain / Spring AI, My Inbox, labels/teams as first-class data.
+
+---
+
+## 2b. Facebook Messenger (shipped)
+
+Package: `com.chatwoot.api.integration.facebook`. Vue wizard is in [bob-web](https://github.com/shamim51/bob-web); backend matches Chatwoot paths and JSON.
+
+### Product journey
+
+1. Settings → Inboxes → Facebook (tile needs `window.chatwootConfig.fbAppId` and account feature `channel_facebook`).
+2. FB.login → `POST /api/v1/accounts/{id}/callbacks/facebook_pages.json` `{ omniauth_token }` → `{ data: { page_details, user_access_token } }`.
+3. Pick page → `POST .../callbacks/register_facebook_page` → small inbox JSON (`id`, `channel_id`, `name`, `channel_type`, `avatar_url`, `page_id`, `enable_auto_assignment`).
+4. **Add agents** (required for non-admins to see the inbox): `GET .../agents` then `PATCH .../inbox_members` `{ inbox_id, user_ids }`. Administrators see all inboxes without membership; agents only see inboxes they belong to.
+5. Reauth later: `POST .../callbacks/reauthorize_page` `{ omniauth_token, inbox_id }` → `{ data: <inbox> }` or `422`.
+6. Customer messages the Page → Meta `GET/POST /bot` → contact + conversation + incoming text.
+7. Agent `POST .../conversations/{displayId}/messages` → Graph `me/messages`; `source_id` = Graph `message_id`. Echoes from our `FB_APP_ID` are skipped.
+
+Inbox list adds Facebook-only keys (`page_id`, `provider_name`, `reauthorization_required`) and omits them for `Channel::Api`.
+
+### Meta / ops (not automatic)
+
+Chatwoot does **not** register the Facebook webhook URL. You set it in the Meta app. Bob only **subscribes the page** after inbox create.
+
+| Env | Role |
+|---|---|
+| `FB_APP_ID` | Graph app id; must match `bob-web/public/window-config.js` `fbAppId` |
+| `FB_APP_SECRET` | Token exchange + `X-Hub-Signature-256` |
+| `FB_VERIFY_TOKEN` | `GET /bot?hub.verify_token=` |
+| `FACEBOOK_API_VERSION` | default `v18.0` |
+
+Also required: Messenger product on the app, page permissions (`pages_messaging`, `pages_show_list`, …), and a **public HTTPS** callback `{host}/bot` (tunnel for local). Empty Spring Facebook env vars will fail page listing.
+
+### What this run does not do
+
+- Live thread updates (no websocket). Refresh to see inbound.
+- Images/files (no attachments table).
+- Assign-agent picker (`assignable_agents`).
+- `HUMAN_AGENT` send tag (Graph may reject replies outside the 24h window).
 
 ---
 
 ## Frontend (direct port)
 
-The agent dashboard lives in [`web/`](../web/) as a standalone Vite app (Chatwoot Vue copy: dashboard + v3 login + shared + widget helpers). Run `cd web && pnpm install && pnpm dev` and open `/app/login`.
+The agent dashboard lives in [shamim51/bob-web](https://github.com/shamim51/bob-web) (`../bob-web` locally). See that repo’s [docs/PLAN_AND_PROGRESS.md](https://github.com/shamim51/bob-web/blob/main/docs/PLAN_AND_PROGRESS.md). Run `pnpm install && pnpm dev` there and open `/app/login`.
 
-Agent login uses Keycloak Authorization Code + PKCE (same realm/client as silkroad-fe). Point `chatwootConfig.apiHost` at Spring and set `KEYCLOAK_ISSUER_URI` locally to that realm. ActionCable replacement is **not** done.
+Agent login uses Keycloak Authorization Code + PKCE (same realm/client as silkroad-fe). Point `VITE_API_HOST` at Spring and set `KEYCLOAK_ISSUER_URI` locally to that realm. ActionCable replacement is **not** done.
 
 ---
 
@@ -127,24 +164,24 @@ Until A is done, you can only exercise the API with curl/HTTP files + JWT.
 
 ### Frontend (direct port)
 
-The agent dashboard lives in [`web/`](../web/) as a standalone Vite app copied from Chatwoot (`dashboard` + `v3` login + `shared` + `widget` helpers). Run `pnpm install && pnpm dev` in `web/`. Keycloak login is wired in the Vue dashboard. Point `apiHost` at Spring so profile and conversations use Bearer tokens.
+Dashboard: [shamim51/bob-web](https://github.com/shamim51/bob-web) (`../bob-web`). Keycloak login is wired. Point `VITE_API_HOST` at Spring so profile and conversations use Bearer tokens.
 
 **B. Live chatbox (needed for “messages in the right order while the thread is open”)**
 
 - Emit `message.created` / `message.updated` with the same payload as message JSON (including `echo_id`).
 - Prefer a thin Vue WebSocket adapter over cloning ActionCable’s wire protocol.
 
-**C. Facebook / Messenger (first real channel)**
+**C. Facebook / Messenger** — **done** (text in/out + add-provider + add-agents). Remaining: live events, attachments, `assignable_agents`.
 
-- Settings callbacks: `facebook_pages`, `register_facebook_page`, `reauthorize_page`.
-- Inbound webhook (Meta signature, **not** JWT).
-- Outbound Graph send after `MessageBuilder`; set `source_id`; skip Chatwoot echoes.
+**D. WhatsApp Cloud** (next channel)
 
-**D. Captain with Spring AI**
+- Create: `POST /inboxes` `{ channel: { type: "whatsapp", provider: "whatsapp_cloud", ... } }` first; embedded signup later.
+- Webhook: public `GET/POST /webhooks/whatsapp/{phone_number}` + Graph callback register.
+- Send through the same `SendReplyService` hook.
+
+**E. Captain with Spring AI**
 
 - Same Chatwoot routes: `/captain/tasks/*`, copilot threads, then inbox auto-reply as a normal **outgoing** message through `MessageBuilder`.
-
-Do not start C or D until Conversations REST + (ideally) B work against the existing Vue thread.
 
 ### Map of this codebase
 
@@ -154,9 +191,10 @@ Package-by-feature under `com.chatwoot.api`. Each feature owns `controller`, `mo
 |---|---|
 | `account` | Account, User, AccountUser, profile, agents |
 | `contact` | Contact, ContactInbox |
-| `inbox` | Inbox, InboxMember |
+| `inbox` | Inbox, InboxMember, `PATCH /inbox_members` |
 | `conversation` | Conversation, ConversationFinder, display_id |
-| `messaging` | Message, MessageFinder, MessageBuilder |
+| `messaging` | Message, MessageFinder, MessageBuilder, `SendReplyService` |
+| `integration.facebook` | Callbacks, `/bot` webhook, Graph client, `FacebookPage` |
 | `notification` / `label` / `team` / `customattribute` / `customfilter` | stub supporting reads |
 | `shared.dto` | timestamps, `{ payload }` wrapper |
 | `security` | JWT → user by email |
@@ -174,6 +212,9 @@ export DATABASE_USERNAME=postgres
 export DATABASE_PASSWORD=postgres
 export KEYCLOAK_ISSUER_URI=http://localhost:8081/realms/chatwoot
 export CHATWOOT_SEED=true
+export FB_APP_ID=
+export FB_APP_SECRET=
+export FB_VERIFY_TOKEN=
 ./gradlew bootRun
 ```
 
