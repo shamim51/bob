@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,9 +32,19 @@ public interface MessageRepository extends JpaRepository<Message, Integer> {
             select count(m) from Message m
             where m.conversation.id = :conversationPk
               and m.messageType = 0
-              and (:since is null or m.createdAt > :since)
             """)
-    long countUnreadIncoming(@Param("conversationPk") Integer conversationPk, @Param("since") java.time.Instant since);
+    long countUnreadIncoming(@Param("conversationPk") Integer conversationPk);
+
+    @Query("""
+            select count(m) from Message m
+            where m.conversation.id = :conversationPk
+              and m.messageType = 0
+              and m.createdAt > :since
+            """)
+    long countUnreadIncomingSince(
+            @Param("conversationPk") Integer conversationPk,
+            @Param("since") Instant since
+    );
 
     @Query("""
             select m from Message m

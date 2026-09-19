@@ -120,6 +120,10 @@ public class ConversationMapper {
     }
 
     private long unreadCount(Conversation conversation) {
-        return messages.countUnreadIncoming(conversation.getId(), conversation.getAgentLastSeenAt());
+        Instant since = conversation.getAgentLastSeenAt();
+        if (since == null) {
+            return messages.countUnreadIncoming(conversation.getId());
+        }
+        return messages.countUnreadIncomingSince(conversation.getId(), since);
     }
 }
