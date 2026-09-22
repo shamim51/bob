@@ -1,0 +1,27 @@
+package com.bob.api.integration.apps.controller;
+
+import com.bob.api.security.CurrentUserService;
+import com.bob.api.shared.dto.PayloadResponse;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/v1/accounts/{accountId}/integrations/apps")
+public class IntegrationAppsController {
+
+    private final CurrentUserService currentUserService;
+
+    public IntegrationAppsController(CurrentUserService currentUserService) {
+        this.currentUserService = currentUserService;
+    }
+
+    @GetMapping
+    public PayloadResponse<List<Object>> index(@PathVariable Integer accountId) {
+        currentUserService.requireMembership(accountId);
+        return new PayloadResponse<>(List.of());
+    }
+}

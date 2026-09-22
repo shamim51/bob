@@ -8,6 +8,10 @@ import org.springframework.stereotype.Component;
 public class AgentMapper {
 
     public AgentResponse agent(User user, Integer accountId) {
+        return agent(user, accountId, null);
+    }
+
+    public AgentResponse agent(User user, Integer accountId, String assigneeType) {
         return new AgentResponse(
                 user.getId(),
                 accountId,
@@ -20,7 +24,8 @@ public class AgentMapper {
                 user.getName(),
                 user.getCurrentAccountUser() == null ? "agent" : user.getCurrentAccountUser().roleName(),
                 "",
-                "user"
+                "user",
+                assigneeType
         );
     }
 }

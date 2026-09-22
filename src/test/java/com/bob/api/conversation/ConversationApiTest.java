@@ -230,5 +230,44 @@ class ConversationApiTest {
                         .with(jwt().jwt(jwt -> jwt.claim("email", "agent@example.com"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.payload").isArray());
+        mockMvc.perform(get("/api/v1/accounts/{id}/conversations/{displayId}/labels", accountId, displayId)
+                        .with(jwt().jwt(jwt -> jwt.claim("email", "agent@example.com"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.payload").isArray())
+                .andExpect(jsonPath("$.payload.length()").value(0));
+        mockMvc.perform(get("/api/v1/accounts/{id}/conversations/{displayId}/attachments", accountId, displayId)
+                        .with(jwt().jwt(jwt -> jwt.claim("email", "agent@example.com"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.meta.total_count").value(0))
+                .andExpect(jsonPath("$.payload").isArray())
+                .andExpect(jsonPath("$.payload.length()").value(0));
+        mockMvc.perform(get("/api/v1/accounts/{id}/integrations/apps", accountId)
+                        .with(jwt().jwt(jwt -> jwt.claim("email", "agent@example.com"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.payload").isArray())
+                .andExpect(jsonPath("$.payload.length()").value(0));
+    }
+
+    @Test
+    void conversationLabelsComeFromCachedList() throws Exception {
+        Conversation conversation = conversations.findByAccountIdAndDisplayId(accountId, displayId).orElseThrow();
+        conversation.setCachedLabelList("billing, vip");
+        conversations.save(conversation);
+        mockMvc.perform(get("/api/v1/accounts/{id}/conversations/{displayId}/labels", accountId, displayId)
+                        .with(jwt().jwt(jwt -> jwt.claim("email", "agent@example.com"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.payload.length()").value(2))
+                .andExpect(jsonPath("$.payload[0]").value("billing"))
+                .andExpect(jsonPath("$.payload[1]").value("vip"));
+    }
+
+    @Test
+    void missingConversationLabelsAndAttachmentsAreNotFound() throws Exception {
+        mockMvc.perform(get("/api/v1/accounts/{id}/conversations/{displayId}/labels", accountId, 999999)
+                        .with(jwt().jwt(jwt -> jwt.claim("email", "agent@example.com"))))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/v1/accounts/{id}/conversations/{displayId}/attachments", accountId, 999999)
+                        .with(jwt().jwt(jwt -> jwt.claim("email", "agent@example.com"))))
+                .andExpect(status().isNotFound());
     }
 }

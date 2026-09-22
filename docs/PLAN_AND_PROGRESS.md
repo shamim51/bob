@@ -58,13 +58,18 @@ Inbox `channel_type` is a string (`Channel::Api` in seed, `Channel::FacebookPage
 | GET | `/api/v1/accounts/{id}/conversations` | `ConversationFinder`: default status `open`, `assignee_type`, inbox membership, sort `last_activity_at_desc`, page 25. Body `{ data: { meta, payload } }`. Conversation `id` = **display_id**. |
 | GET | `.../conversations/meta` | Same counts |
 | GET | `.../conversations/{displayId}` | Conversation partial |
+| GET | `.../conversations/{displayId}/labels` | `{ payload: string[] }` from `cached_label_list` |
+| GET | `.../conversations/{displayId}/attachments` | `{ meta: { total_count: 0 }, payload: [] }` until files are stored |
+| GET | `.../assignable_agents` | Inbox-member intersection plus administrators; `assignee_type` when `include_ai_assignees` is set |
+| GET | `.../contacts/{id}/conversations` | Last 25 for the contact, or neighbour window when `conversation_id` is a display_id |
+| GET | `.../integrations/apps` | `{ payload: [] }` |
 | GET | `.../messages` | `MessageFinder`: latest 20 asc; `before` 20 then reverse; `after` 100 |
 | POST | `.../messages` | `MessageBuilder`; `echo_id` not persisted; returned on JSON; Facebook inboxes then Graph-send and set `source_id` |
 | POST | `.../update_last_seen` | `agent_last_seen_at` |
 | POST | `.../toggle_status` | open / resolved / pending / snoozed |
 | POST | `.../assignments` | `assignee_id` |
 
-Supporting reads so the conversation page does not 404: account, inboxes, agents, contact show, empty labels/teams/custom filters/attributes, notifications unread `0`.
+Supporting reads so the conversation page does not 404: account, inboxes, agents, assignable agents, contact show, contact conversations, conversation labels (from `cached_label_list`), empty integrations apps, empty conversation attachments, empty account labels/teams/custom filters/attributes, notifications unread `0`.
 
 ### Chatbox rules already in code
 
@@ -81,10 +86,9 @@ Supporting reads so the conversation page does not 404: account, inboxes, agents
 ### Intentionally not done (still)
 
 - ActionCable / live `message.created` (refresh Conversations to see inbound Facebook messages).
-- `GET .../assignable_agents` (conversation assign-agent dropdown).
 - `GET .../inboxes/:id` (inbox settings after create).
-- Attachments, avatars, delivery/read receipts, Instagram-on-page DMs.
-- WhatsApp, Captain / Spring AI, My Inbox, labels/teams as first-class data.
+- Attachment storage (conversation attachments read returns an empty payload), avatars, delivery/read receipts, Instagram-on-page DMs.
+- WhatsApp, Captain / Spring AI, My Inbox, account label catalog, `POST .../labels`, teams as first-class data.
 
 ---
 
@@ -120,8 +124,7 @@ Also required: Messenger product on the app, page permissions (`pages_messaging`
 ### What this run does not do
 
 - Live thread updates (no websocket). Refresh to see inbound.
-- Images/files (no attachments table).
-- Assign-agent picker (`assignable_agents`).
+- Images/files (no attachments table; conversation attachments API returns an empty payload).
 - `HUMAN_AGENT` send tag (Graph may reject replies outside the 24h window).
 
 ---
@@ -171,7 +174,7 @@ Dashboard: [shamim51/bob-web](https://github.com/shamim51/bob-web) (`../bob-web`
 - Emit `message.created` / `message.updated` with the same payload as message JSON (including `echo_id`).
 - Prefer a thin Vue WebSocket adapter over cloning ActionCable’s wire protocol.
 
-**C. Facebook / Messenger** — **done** (text in/out + add-provider + add-agents). Remaining: live events, attachments, `assignable_agents`.
+**C. Facebook / Messenger** — **done** (text in/out + add-provider + add-agents). Remaining: live events, attachment storage.
 
 **D. WhatsApp Cloud** (next channel)
 
@@ -195,7 +198,7 @@ Package-by-feature under `com.bob.api`. Each feature owns `controller`, `model`,
 | `conversation` | Conversation, ConversationFinder, display_id |
 | `messaging` | Message, MessageFinder, MessageBuilder, `SendReplyService` |
 | `integration.facebook` | Callbacks, `/bot` webhook, Graph client, `FacebookPage` |
-| `notification` / `label` / `team` / `customattribute` / `customfilter` | stub supporting reads |
+| `notification` / `label` / `team` / `customattribute` / `customfilter` / `integration.apps` | stub supporting reads |
 | `shared.dto` | timestamps, `{ payload }` wrapper |
 | `security` | JWT → user by email |
 | `config` | Security, CORS, seed |

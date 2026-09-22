@@ -13,8 +13,11 @@ import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -146,5 +149,116 @@ public class ConversationFinder {
             case "created_at_desc" -> cq.orderBy(cb.desc(root.get("createdAt")), cb.desc(root.get("id")));
             default -> cq.orderBy(cb.desc(root.get("lastActivityAt")));
         }
+    }
+
+    public List<Conversation> forContact(
+            User user,
+            AccountUser membership,
+            Integer contactId,
+            Integer conversationDisplayId
+    ) {
+        if (conversationDisplayId == null) {
+            return queryContactConversations(user, membership, contactId, null, "desc", 25);
+        }
+        Conversation conversation = queryContactConversations(user, membership, contactId, conversationDisplayId, "desc", 1)
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        Conversation older = neighbour(user, membership, contactId, conversation, true);
+        Conversation newer = neighbour(user, membership, contactId, conversation, false);
+        List<Conversation> window = new ArrayList<>();
+        if (older != null) {
+            window.add(older);
+        }
+        window.add(conversation);
+        if (newer != null) {
+            window.add(newer);
+        }
+        return window;
+    }
+
+    private Conversation neighbour(
+            User user,
+            AccountUser membership,
+            Integer contactId,
+            Conversation conversation,
+            boolean older
+    ) {
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Conversation> cq = cb.createQuery(Conversation.class);
+        Root<Conversation> root = fetchConversationGraph(cq);
+        List<Predicate> predicates = contactConversationPredicates(user, membership, contactId, cb, root);
+        Instant createdAt = conversation.getCreatedAt();
+        Integer id = conversation.getId();
+        predicates.add(cb.notEqual(root.get("id"), id));
+        if (older) {
+            predicates.add(cb.or(
+                    cb.lessThan(root.get("createdAt"), createdAt),
+                    cb.and(cb.equal(root.get("createdAt"), createdAt), cb.lessThan(root.get("id"), id))
+            ));
+            cq.orderBy(cb.desc(root.get("createdAt")), cb.desc(root.get("id")));
+        } else {
+            predicates.add(cb.or(
+                    cb.greaterThan(root.get("createdAt"), createdAt),
+                    cb.and(cb.equal(root.get("createdAt"), createdAt), cb.greaterThan(root.get("id"), id))
+            ));
+            cq.orderBy(cb.asc(root.get("createdAt")), cb.asc(root.get("id")));
+        }
+        cq.where(predicates.toArray(Predicate[]::new));
+        List<Conversation> rows = entityManager.createQuery(cq).setMaxResults(1).getResultList();
+        return rows.isEmpty() ? null : rows.getFirst();
+    }
+
+    private List<Conversation> queryContactConversations(
+            User user,
+            AccountUser membership,
+            Integer contactId,
+            Integer conversationDisplayId,
+            String createdAtOrder,
+            int limit
+    ) {
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Conversation> cq = cb.createQuery(Conversation.class);
+        Root<Conversation> root = fetchConversationGraph(cq);
+        List<Predicate> predicates = contactConversationPredicates(user, membership, contactId, cb, root);
+        if (conversationDisplayId != null) {
+            predicates.add(cb.equal(root.get("displayId"), conversationDisplayId));
+        }
+        cq.where(predicates.toArray(Predicate[]::new));
+        if ("asc".equals(createdAtOrder)) {
+            cq.orderBy(cb.asc(root.get("createdAt")), cb.asc(root.get("id")));
+        } else {
+            cq.orderBy(cb.desc(root.get("createdAt")), cb.desc(root.get("id")));
+        }
+        return entityManager.createQuery(cq).setMaxResults(limit).getResultList();
+    }
+
+    private Root<Conversation> fetchConversationGraph(CriteriaQuery<Conversation> cq) {
+        Root<Conversation> root = cq.from(Conversation.class);
+        root.fetch("inbox", JoinType.LEFT);
+        root.fetch("contact", JoinType.LEFT);
+        root.fetch("assignee", JoinType.LEFT);
+        root.fetch("contactInbox", JoinType.LEFT);
+        cq.distinct(true);
+        return root;
+    }
+
+    private List<Predicate> contactConversationPredicates(
+            User user,
+            AccountUser membership,
+            Integer contactId,
+            CriteriaBuilder cb,
+            Root<Conversation> root
+    ) {
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(cb.equal(root.get("accountId"), membership.getAccount().getId()));
+        predicates.add(cb.equal(root.get("contact").get("id"), contactId));
+        List<Integer> inboxIds = assignedInboxIds(user, membership, null);
+        if (inboxIds.isEmpty()) {
+            predicates.add(cb.disjunction());
+        } else {
+            predicates.add(root.get("inbox").get("id").in(inboxIds));
+        }
+        return predicates;
     }
 }

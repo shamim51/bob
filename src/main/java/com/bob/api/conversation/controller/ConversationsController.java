@@ -5,6 +5,7 @@ import com.bob.api.account.mapper.AgentMapper;
 import com.bob.api.account.model.AccountUser;
 import com.bob.api.account.model.User;
 import com.bob.api.account.repository.UserRepository;
+import com.bob.api.conversation.dto.ConversationAttachmentsResponse;
 import com.bob.api.conversation.dto.ConversationCountMeta;
 import com.bob.api.conversation.dto.ConversationListResponse;
 import com.bob.api.conversation.dto.ConversationMetaEnvelope;
@@ -105,6 +106,17 @@ public class ConversationsController {
         Conversation conversation = conversations.findByAccountIdAndDisplayId(accountId, displayId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         return mapper.conversation(conversation);
+    }
+
+    @GetMapping("/{displayId}/attachments")
+    public ConversationAttachmentsResponse attachments(
+            @PathVariable Integer accountId,
+            @PathVariable Integer displayId
+    ) {
+        currentUserService.requireMembership(accountId);
+        conversations.findByAccountIdAndDisplayId(accountId, displayId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        return ConversationAttachmentsResponse.empty();
     }
 
     @PostMapping("/{displayId}/update_last_seen")

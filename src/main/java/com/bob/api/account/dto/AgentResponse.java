@@ -1,5 +1,7 @@
 package com.bob.api.account.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 public record AgentResponse(
         Integer id,
         Integer accountId,
@@ -12,6 +14,7 @@ public record AgentResponse(
         String name,
         String role,
         String thumbnail,
-        String type
+        String type,
+        @JsonInclude(JsonInclude.Include.NON_NULL) String assigneeType
 ) {
 }
