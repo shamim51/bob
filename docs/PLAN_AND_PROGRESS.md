@@ -68,6 +68,7 @@ Inbox `channel_type` is a string (`Channel::Api` in seed, `Channel::FacebookPage
 | POST | `.../update_last_seen` | `agent_last_seen_at` |
 | POST | `.../toggle_status` | open / resolved / pending / snoozed |
 | POST | `.../assignments` | `assignee_id` |
+| POST | `/api/v1/accounts/{id}/bulk_actions` | Conversation `ids` are **display_id**. Empty 200. Updates assignee/status/team/snooze/`cached_label_list`. Unknown type → 422 `{ success: false }`. |
 
 Supporting reads so the conversation page does not 404: account, inboxes, agents, assignable agents, contact show, contact conversations, conversation labels (from `cached_label_list`), empty integrations apps, empty conversation attachments, empty account labels/teams/custom filters/attributes, notifications unread `0`.
 

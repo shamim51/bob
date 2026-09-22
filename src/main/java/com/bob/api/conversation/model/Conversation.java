@@ -271,6 +271,14 @@ public class Conversation {
         this.lastActivityAt = lastActivityAt;
     }
 
+    public Long getTeamId() {
+        return teamId;
+    }
+
+    public void setTeamId(Long teamId) {
+        this.teamId = teamId;
+    }
+
     public Instant getSnoozedUntil() {
         return snoozedUntil;
     }
